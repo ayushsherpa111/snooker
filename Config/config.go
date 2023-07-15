@@ -1,0 +1,9 @@
+package config
+
+const (
+	WIN_WIDTH  = 1071
+	WIN_HEIGHT = 534
+
+	PRE_MARKED_LINE = WIN_WIDTH / 5
+	SEMI_CIRC_RADI  = WIN_WIDTH / 6
+)
