@@ -41,7 +41,7 @@ var (
 	black       = color.Black
 	board_state = []cueStartState{
 		{
-			x:          config.PRE_MARKED_LINE - (14 * circ_Radius),
+			x:          config.PRE_MARKED_LINE - (14 * circRadius),
 			y:          config.WIN_HEIGHT / 2,
 			color:      white,
 			selectable: true,
@@ -72,12 +72,12 @@ var (
 			color: blue,
 		},
 		{
-			x:     820 - 2*circ_Radius - 4,
+			x:     820 - 2*circRadius - 4,
 			y:     258,
 			color: pink,
 		},
 		{
-			x:     config.WIN_WIDTH - (4 * circ_Radius),
+			x:     config.WIN_WIDTH - (4 * circRadius),
 			y:     config.WIN_HEIGHT / 2,
 			color: black,
 		},

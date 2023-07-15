@@ -15,30 +15,54 @@ type Game struct {
 	cueBalls []circle
 	pockets  []circle
 	board    *ebiten.Image
+	cue      *circle
 }
 
 const (
-	circ_Radius = 10
-	antialias   = true
+	circRadius = 10
+	antialias  = true
+	cueBall    = 0
 )
 
-var set_board = false
+var (
+	isBoardSet    = false
+	isCueSelected = false
+	gameStarted   = false
+)
 
 func (g *Game) Update() error {
+	mouseX, mouseY := ebiten.CursorPosition()
+	fMouseX, fMouseY := float32(mouseX), float32(mouseY)
 	if inpututil.IsKeyJustPressed(ebiten.KeyQ) {
 		return ebiten.Termination
 	}
-	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) {
-		fmt.Println("Mouse button pressed")
-		fmt.Println(ebiten.CursorPosition())
+
+	if inpututil.IsMouseButtonJustPressed(ebiten.MouseButton0) && !isCueSelected {
+		if g.isOverlapping(fMouseX, fMouseY, g.cue.cx, g.cue.cy, circRadius) {
+			isCueSelected = true
+		}
 	}
+
+	if inpututil.IsMouseButtonJustReleased(ebiten.MouseButton0) {
+		isCueSelected = false
+	}
+
+	if isCueSelected && !gameStarted {
+		g.cue.cx = fMouseX
+		g.cue.cy = fMouseY
+	}
+
 	return nil
 }
 
+func (g *Game) isOverlapping(x1, y1, x2, y2 float32, distance float32) bool {
+	return findDistance(x1, y1, x2, y2) < float64(distance)
+}
+
 func (g *Game) Draw(screen *ebiten.Image) {
-	if !set_board {
+	if !isBoardSet {
 		g.setBoard()
-		set_board = true
+		isBoardSet = true
 	}
 	g.drawBoard(screen)
 }
@@ -86,12 +110,13 @@ func (g *Game) setBoard() {
 	}
 	g.arrangePyramids(5, 0, 0, 0)
 	fmt.Println(g.cueBalls[1:6])
+	g.cue = &g.cueBalls[0]
 }
 
 func (g *Game) drawBoard(target *ebiten.Image) {
 	target.DrawImage(g.board, nil)
 	for _, ball := range g.cueBalls {
-		vector.DrawFilledCircle(target, ball.cx, ball.cy, circ_Radius, ball.color, antialias)
+		vector.DrawFilledCircle(target, ball.cx, ball.cy, circRadius, ball.color, antialias)
 	}
 }
 
@@ -100,16 +125,16 @@ func (g *Game) arrangePyramids(steps, depth, padding, idx int) {
 		return
 	}
 	baseTriangleX := 900
-	baseTriangleY := config.WIN_HEIGHT/3 + (circ_Radius * 2)
+	baseTriangleY := config.WIN_HEIGHT/3 + (circRadius * 2)
 	for i := 1; i <= steps; i++ {
-		g.cueBalls[i+idx].cx = float32(baseTriangleX) - float32(depth*circ_Radius)
+		g.cueBalls[i+idx].cx = float32(baseTriangleX) - float32(depth*circRadius)
 		g.cueBalls[i+idx].cy = float32(
 			baseTriangleY,
 		) + float32(
-			(2*circ_Radius)*i,
+			(2*circRadius)*i,
 		) + float32(
-			padding*circ_Radius,
+			padding*circRadius,
 		)
 	}
-	g.arrangePyramids(steps-1, depth+2, padding+1, steps + idx)
+	g.arrangePyramids(steps-1, depth+2, padding+1, steps+idx)
 }
