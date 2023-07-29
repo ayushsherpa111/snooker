@@ -6,4 +6,5 @@ const (
 
 	PRE_MARKED_LINE = WIN_WIDTH / 5
 	SEMI_CIRC_RADI  = WIN_WIDTH / 6
+    BASE_POWER = 25
 )

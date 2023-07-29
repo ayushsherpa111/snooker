@@ -23,6 +23,20 @@ type circle struct {
 	isSelectable bool
 }
 
+type cueStick struct {
+	// position from cue ball
+	cx, cy float32
+
+	// width of cue stick
+	strokeWidth float32
+
+	// maximum velocity that can be given to cue
+	maxPower float32
+
+	// draw stick on the board
+	drawStick bool
+}
+
 type cueStartState struct {
 	x, y       float32
 	color      color.Color
@@ -57,7 +71,7 @@ var (
 			color: green,
 		},
 		{
-			x:     config.WIN_WIDTH / 5,
+			x:     config.PRE_MARKED_LINE,
 			y:     config.WIN_HEIGHT / 2,
 			color: brown,
 		},
@@ -83,3 +97,12 @@ var (
 		},
 	}
 )
+
+func mirrorPoint(slope, coeff, y, x1, y1 float32) (float32, float32) {
+	temp := -2 * (slope*x1 + y*y1 + coeff) / (slope*slope + y*y)
+	return temp*slope + x1, temp*y + y1
+}
+
+func slope(x1, y1, x2, y2 float32) float32 {
+	return (y2 - y1) / (x2 - x1)
+}
