@@ -2,21 +2,22 @@ package game
 
 import (
 	"image/color"
+	"math"
 
 	config "github.com/ayushsherpa111/snooker/Config"
 )
 
 type circle struct {
 	id uint8
-	// Velocity in the x coordinate
-	vx float32
-	// Velocity in the y coordinate
-	vy float32
+
+	// velocity of balls
+	vx, vy float64
+
+	// acceleration of balls
+	ax, ay float64
 
 	// Center X position of the circle
-	cx float32
-	// Center Y position of the circle
-	cy float32
+	cx, cy float64
 
 	color color.Color
 
@@ -25,20 +26,20 @@ type circle struct {
 
 type cueStick struct {
 	// position from cue ball
-	cx, cy float32
+	cx, cy float64
 
 	// width of cue stick
-	strokeWidth float32
+	strokeWidth float64
 
 	// maximum velocity that can be given to cue
-	maxPower float32
+	maxPower float64
 
 	// draw stick on the board
 	drawStick bool
 }
 
 type cueStartState struct {
-	x, y       float32
+	x, y       float64
 	color      color.Color
 	selectable bool
 }
@@ -98,11 +99,19 @@ var (
 	}
 )
 
-func mirrorPoint(slope, coeff, y, x1, y1 float32) (float32, float32) {
+func mirrorPoint(slope, coeff, y, x1, y1 float64) (float64, float64) {
 	temp := -2 * (slope*x1 + y*y1 + coeff) / (slope*slope + y*y)
 	return temp*slope + x1, temp*y + y1
 }
 
-func slope(x1, y1, x2, y2 float32) float32 {
+func slope(x1, y1, x2, y2 float64) float64 {
 	return (y2 - y1) / (x2 - x1)
+}
+
+func capOff(val, cap_val float64) float64 {
+	var direction = val / math.Abs(val)
+	if math.Abs(val) > cap_val {
+		return direction * cap_val
+	}
+	return val
 }
