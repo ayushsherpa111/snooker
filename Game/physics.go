@@ -66,3 +66,8 @@ func (g *Game) move() bool {
 
 	return ballsSkipped != len(g.cueBalls)
 }
+
+
+func (g *Game) handle_collision() {
+
+}

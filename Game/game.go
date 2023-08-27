@@ -82,18 +82,17 @@ func (g *Game) Update() error {
 		g.cueStick.cx, g.cueStick.cy = mirrorPoint(m, coeff, 1, fMouseX, -1*fMouseY)
 		g.cueStick.cy *= -1
 
-		// if g.Debug {
-		// 	fmt.Printf("Mouse: (%f,%f) Cue(%f,%f)\n", fMouseX, fMouseY, g.cue.cx, g.cue.cy)
-		// 	fmt.Printf("Slope: %f\n", m)
-		// 	fmt.Printf("Coeff: %f\n", coeff)
-		// 	fmt.Printf("CueStick: (%f,%f)\n", g.cueStick.cx, g.cueStick.cy)
-		// }
+		if g.Debug {
+			fmt.Printf("Mouse: (%f,%f) Cue(%f,%f)\n", fMouseX, fMouseY, g.cue.cx, g.cue.cy)
+			fmt.Printf("Slope: %f\n", m)
+			fmt.Printf("Coeff: %f\n", coeff)
+			fmt.Printf("CueStick: (%f,%f)\n", g.cueStick.cx, g.cueStick.cy)
+		}
 	}
 
 	if isCueInMotion {
 		isCueInMotion = g.move()
 	}
-	// handle collision
 	return nil
 }
 

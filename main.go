@@ -14,7 +14,6 @@ func main() {
     var debug bool
     flag.BoolVar(&debug, "b", false, "enable debugging")
     flag.Parse()
-    fmt.Println(debug)
 	snooker := &game.Game{Debug: debug}
 
     ebiten.SetVsyncEnabled(false)
