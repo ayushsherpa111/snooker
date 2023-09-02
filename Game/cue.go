@@ -8,7 +8,11 @@ import (
 )
 
 type Vector struct {
-    x, y float64
+	x, y float64
+}
+
+func (v Vector) distance() float64 {
+	return math.Sqrt(v.x*v.x + v.y*v.y)
 }
 
 type circle struct {
@@ -116,7 +120,7 @@ func slope(x1, y1, x2, y2 float64) float64 {
 }
 
 func capOff(val, cap_val float64) float64 {
-	var direction = val / math.Abs(val)
+	direction := val / math.Abs(val)
 	if math.Abs(val) > cap_val {
 		return direction * cap_val
 	}

@@ -67,7 +67,8 @@ func (g *Game) Update() error {
 		}
 	}
 
-	g.accumulateForces()
+	// g.accumulateForces()
+	g.checkConstraints()
 	g.move()
 	return nil
 }
@@ -78,11 +79,6 @@ func (g *Game) isOverlapping(x1, y1, x2, y2 float64, distance float64) bool {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawBoard(screen)
-	for _, i := range g.cueBalls {
-		fmt.Println(i.p_v)
-		fmt.Println(i.c_v)
-		fmt.Println()
-	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -126,7 +122,7 @@ func (g *Game) setBoard() {
 		}
 	}
 	g.arrangePyramids(5, 0, 0, 0)
-	g.cue = g.cueBalls[0]
+	g.cue = g.cueBalls[config.CUE_BALL_IDX]
 	g.cueStick = cueStick{
 		drawStick:   false,
 		maxPower:    config.BASE_POWER,
@@ -167,8 +163,8 @@ func (g *Game) arrangePyramids(steps, depth, padding, idx int) {
 	baseTriangleX := 900
 	baseTriangleY := config.WIN_HEIGHT/3 + (circRadius * 2)
 	for i := 1; i <= steps; i++ {
-        x := float64(baseTriangleX) - float64(depth*circRadius)
-        y := float64(
+		x := float64(baseTriangleX) - float64(depth*circRadius)
+		y := float64(
 			baseTriangleY,
 		) + float64(
 			(2*circRadius)*i,
@@ -195,8 +191,10 @@ func (g *Game) handleInputs(fMouseX, fMouseY float64) error {
 	case inpututil.IsKeyJustPressed(ebiten.KeyR):
 		g.cue.c_v.x = 250
 		g.cue.c_v.y = 250
-		g.cue.a_v.x, g.cue.a_v.y = 0, 0
-		g.cue.v_v.x, g.cue.v_v.y = 0, 0
+		g.cue.p_v.x = 250
+		g.cue.p_v.y = 250
+		g.cue.a_v.x = 0
+		g.cue.a_v.y = 0
 	case inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight):
 		isCueSelected = false
 	case inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft):
@@ -204,8 +202,11 @@ func (g *Game) handleInputs(fMouseX, fMouseY float64) error {
 	case inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft):
 		// shoot ball
 		if !isCueInMotion {
-			g.cue.v_v.x = config.BASE_POWER * (g.cueStick.cx - g.cue.c_v.x)
-			g.cue.v_v.y = config.BASE_POWER * (g.cueStick.cy - g.cue.c_v.y)
+			velocity := Vector{
+				x: config.BASE_POWER * (g.cueStick.cx - g.cue.c_v.x),
+				y: config.BASE_POWER * (g.cueStick.cy - g.cue.c_v.y),
+			}
+			g.SetVelocity(config.CUE_BALL_IDX, velocity)
 		}
 		g.cueStick.drawStick = false
 		isCueInMotion = true

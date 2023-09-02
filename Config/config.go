@@ -13,4 +13,5 @@ const (
     FIXED_TIMESTAMP_LOOP = 0.01666
 
     MAX_ACCEL = 20
+    CUE_BALL_IDX = 0
 )
