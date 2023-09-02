@@ -2,7 +2,6 @@ package game
 
 import (
 	"fmt"
-	"math"
 	"time"
 
 	config "github.com/ayushsherpa111/snooker/Config"
@@ -10,64 +9,58 @@ import (
 
 var t = time.Date(2001, time.September, 9, 1, 46, 40, 0, time.UTC)
 
-func (g *Game) move() bool {
-	ballsSkipped := 0
+func (g *Game) move() {
 	for _, ball := range g.cueBalls {
-		if ball.vx == 0 && ball.vy == 0 {
-			ballsSkipped++
-			continue
-		}
-		if g.Debug {
-			fmt.Println(ball.ax, ball.ay, ball.vx, ball.vy, ball.cx, ball.cy)
-		}
-
-		ball.ax -= ball.vx * config.DRAG
-		ball.ay -= ball.vy * config.DRAG
-
-		ball.vx += ball.ax * config.FIXED_TIMESTAMP_LOOP 
-		ball.vy += ball.ay * config.FIXED_TIMESTAMP_LOOP 
-
-		ball.cx += ball.vx * config.FIXED_TIMESTAMP_LOOP 
-		ball.cy += ball.vy * config.FIXED_TIMESTAMP_LOOP 
-
-		if math.Abs(ball.vx*ball.vx) < 0.8 {
-			ball.vx = 0
-			ball.ax = 0
-		}
-
-		if math.Abs(ball.vy*ball.vy) < 0.8 {
-			ball.vy = 0
-			ball.ay = 0
-		}
-
-		if ball.cx > (config.WIN_WIDTH - circRadius) {
-			ball.vx *= -1
-			ball.ax *= -1
-		}
-
-		if ball.cy > (config.WIN_HEIGHT - circRadius) {
-			ball.vy *= -1
-			ball.ay *= -1
-		}
-
-		if ball.cx < 0 {
-			ball.vx *= -1
-			ball.ax *= -1
-		}
-
-		if ball.cy < 0 {
-			ball.vy *= -1
-			ball.ay *= -1
-		}
-
-		ball.ax = capOff(ball.ax, config.MAX_ACCEL)
-		ball.ay = capOff(ball.ay, config.MAX_ACCEL)
+		g.verlet(&ball.c_v, &ball.p_v, &ball.a_v)
 	}
-
-	return ballsSkipped != len(g.cueBalls)
 }
 
+func (g *Game) verlet(current_V, previous_V, accel_V *Vector) {
+	temp_V := *current_V
 
-func (g *Game) handle_collision() {
+	current_V.x += current_V.x - previous_V.x + accel_V.x*(config.FIXED_TIMESTAMP_LOOP*config.FIXED_TIMESTAMP_LOOP)
+	current_V.y += current_V.y - previous_V.y + accel_V.y*(config.FIXED_TIMESTAMP_LOOP*config.FIXED_TIMESTAMP_LOOP)
 
+	*previous_V = temp_V
+	fmt.Println(current_V)
+	fmt.Println(previous_V)
 }
+
+func (g *Game) accumulateForces() {
+	for _, i := range g.cueBalls {
+		i.a_v = Vector{0, 9.8}
+	}
+}
+
+// if math.Abs(ball.vx*ball.vx) < 0.8 {
+// 	ball.vx = 0
+// 	ball.ax = 0
+// }
+//
+// if math.Abs(ball.vy*ball.vy) < 0.8 {
+// 	ball.vy = 0
+// 	ball.ay = 0
+// }
+//
+// if ball.cx > (config.WIN_WIDTH - circRadius) {
+// 	ball.vx *= -1
+// 	ball.ax *= -1
+// }
+//
+// if ball.cy > (config.WIN_HEIGHT - circRadius) {
+// 	ball.vy *= -1
+// 	ball.ay *= -1
+// }
+//
+// if ball.cx < 0 {
+// 	ball.vx *= -1
+// 	ball.ax *= -1
+// }
+//
+// if ball.cy < 0 {
+// 	ball.vy *= -1
+// 	ball.ay *= -1
+// }
+//
+// ball.ax = capOff(ball.ax, config.MAX_ACCEL)
+// ball.ay = capOff(ball.ay, config.MAX_ACCEL)

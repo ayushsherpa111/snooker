@@ -44,55 +44,31 @@ func (g *Game) Update() error {
 
 	// fmt.Printf("(%d %d) (%d %d)\n", mouseX, mouseY, mouseX, -mouseY)
 
-	switch {
-	case inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) && !isCueSelected:
-		if g.isOverlapping(fMouseX, fMouseY, g.cue.cx, g.cue.cy, circRadius) {
-			isCueSelected = true
-		}
-	case inpututil.IsKeyJustPressed(ebiten.KeyQ):
-		return ebiten.Termination
-	case inpututil.IsKeyJustPressed(ebiten.KeyR):
-		g.cue.cx = 250
-		g.cue.cy = 250
-		g.cue.ax, g.cue.ay = 0, 0
-		g.cue.vx, g.cue.vy = 0, 0
-	case inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight):
-		isCueSelected = false
-	case inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft):
-		g.cueStick.drawStick = true
-	case inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft):
-		// shoot ball
-		if !isCueInMotion {
-			g.cue.vx = config.BASE_POWER*(g.cueStick.cx-g.cue.cx)
-			g.cue.vy = config.BASE_POWER*(g.cueStick.cy-g.cue.cy)
-		}
-		g.cueStick.drawStick = false
-		isCueInMotion = true
-	default:
+	if e := g.handleInputs(fMouseX, fMouseY); e != nil {
+		return e
 	}
 
 	if isCueSelected && !gameStarted {
-		g.cue.cx = fMouseX
-		g.cue.cy = fMouseY
+		g.cue.c_v.x = fMouseX
+		g.cue.c_v.y = fMouseY
 	}
 
 	if g.cueStick.drawStick {
-		m := 1 / slope(fMouseX, -1*fMouseY, g.cue.cx, -1*g.cue.cy)
-		coeff := (-1*m)*g.cue.cx + g.cue.cy
+		m := 1 / slope(fMouseX, -1*fMouseY, g.cue.c_v.x, -1*g.cue.c_v.y)
+		coeff := (-1*m)*g.cue.c_v.x + g.cue.c_v.y
 		g.cueStick.cx, g.cueStick.cy = mirrorPoint(m, coeff, 1, fMouseX, -1*fMouseY)
 		g.cueStick.cy *= -1
 
 		if g.Debug {
-			fmt.Printf("Mouse: (%f,%f) Cue(%f,%f)\n", fMouseX, fMouseY, g.cue.cx, g.cue.cy)
+			fmt.Printf("Mouse: (%f,%f) Cue(%f,%f)\n", fMouseX, fMouseY, g.cue.c_v.x, g.cue.c_v.y)
 			fmt.Printf("Slope: %f\n", m)
 			fmt.Printf("Coeff: %f\n", coeff)
 			fmt.Printf("CueStick: (%f,%f)\n", g.cueStick.cx, g.cueStick.cy)
 		}
 	}
 
-	if isCueInMotion {
-		isCueInMotion = g.move()
-	}
+	g.accumulateForces()
+	g.move()
 	return nil
 }
 
@@ -102,6 +78,11 @@ func (g *Game) isOverlapping(x1, y1, x2, y2 float64, distance float64) bool {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.drawBoard(screen)
+	for _, i := range g.cueBalls {
+		fmt.Println(i.p_v)
+		fmt.Println(i.c_v)
+		fmt.Println()
+	}
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -124,8 +105,7 @@ func (g *Game) setBoard() {
 				red_ball := circle{
 					id:           uint8(x),
 					color:        board_state[1].color,
-					cx:           0,
-					cy:           0,
+					c_v:          Vector{0, 0},
 					isSelectable: board_state[1].selectable,
 				}
 				g.cueBalls = append(g.cueBalls, &red_ball)
@@ -138,8 +118,8 @@ func (g *Game) setBoard() {
 			other_balls := circle{
 				id:           uint8(id),
 				color:        board_state[i].color,
-				cx:           board_state[i].x,
-				cy:           board_state[i].y,
+				c_v:          Vector{board_state[i].x, board_state[i].y},
+				p_v:          Vector{board_state[i].x, board_state[i].y},
 				isSelectable: board_state[i].selectable,
 			}
 			g.cueBalls = append(g.cueBalls, &other_balls)
@@ -159,8 +139,8 @@ func (g *Game) drawBoard(target *ebiten.Image) {
 	for _, ball := range g.cueBalls {
 		vector.DrawFilledCircle(
 			target,
-			float32(ball.cx),
-			float32(ball.cy),
+			float32(ball.c_v.x),
+			float32(ball.c_v.y),
 			circRadius,
 			ball.color,
 			antialias,
@@ -169,8 +149,8 @@ func (g *Game) drawBoard(target *ebiten.Image) {
 	if g.cueStick.drawStick {
 		vector.StrokeLine(
 			target,
-			float32(g.cue.cx),
-			float32(g.cue.cy),
+			float32(g.cue.c_v.x),
+			float32(g.cue.c_v.y),
 			float32(g.cueStick.cx),
 			float32(g.cueStick.cy),
 			float32(g.cueStick.strokeWidth),
@@ -187,14 +167,49 @@ func (g *Game) arrangePyramids(steps, depth, padding, idx int) {
 	baseTriangleX := 900
 	baseTriangleY := config.WIN_HEIGHT/3 + (circRadius * 2)
 	for i := 1; i <= steps; i++ {
-		g.cueBalls[i+idx].cx = float64(baseTriangleX) - float64(depth*circRadius)
-		g.cueBalls[i+idx].cy = float64(
+        x := float64(baseTriangleX) - float64(depth*circRadius)
+        y := float64(
 			baseTriangleY,
 		) + float64(
 			(2*circRadius)*i,
 		) + float64(
 			padding*circRadius,
 		)
+		g.cueBalls[i+idx].c_v.x = x
+		g.cueBalls[i+idx].c_v.y = y
+
+		g.cueBalls[i+idx].p_v.x = x
+		g.cueBalls[i+idx].p_v.y = y
 	}
 	g.arrangePyramids(steps-1, depth+2, padding+1, steps+idx)
+}
+
+func (g *Game) handleInputs(fMouseX, fMouseY float64) error {
+	switch {
+	case inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonRight) && !isCueSelected:
+		if g.isOverlapping(fMouseX, fMouseY, g.cue.c_v.x, g.cue.c_v.y, circRadius) {
+			isCueSelected = true
+		}
+	case inpututil.IsKeyJustPressed(ebiten.KeyQ):
+		return ebiten.Termination
+	case inpututil.IsKeyJustPressed(ebiten.KeyR):
+		g.cue.c_v.x = 250
+		g.cue.c_v.y = 250
+		g.cue.a_v.x, g.cue.a_v.y = 0, 0
+		g.cue.v_v.x, g.cue.v_v.y = 0, 0
+	case inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight):
+		isCueSelected = false
+	case inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft):
+		g.cueStick.drawStick = true
+	case inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonLeft):
+		// shoot ball
+		if !isCueInMotion {
+			g.cue.v_v.x = config.BASE_POWER * (g.cueStick.cx - g.cue.c_v.x)
+			g.cue.v_v.y = config.BASE_POWER * (g.cueStick.cy - g.cue.c_v.y)
+		}
+		g.cueStick.drawStick = false
+		isCueInMotion = true
+	default:
+	}
+	return nil
 }

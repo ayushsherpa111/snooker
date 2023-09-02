@@ -7,17 +7,24 @@ import (
 	config "github.com/ayushsherpa111/snooker/Config"
 )
 
+type Vector struct {
+    x, y float64
+}
+
 type circle struct {
 	id uint8
 
 	// velocity of balls
-	vx, vy float64
+	v_v Vector
 
 	// acceleration of balls
-	ax, ay float64
+	a_v Vector
 
-	// Center X position of the circle
-	cx, cy float64
+	// Current X, Y vector of the circle
+	c_v Vector
+
+	// Previous X,Y position of the circle
+	p_v Vector
 
 	color color.Color
 
