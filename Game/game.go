@@ -67,7 +67,7 @@ func (g *Game) Update() error {
 		}
 	}
 
-	// g.accumulateForces()
+	g.accumulateForces()
 	g.checkConstraints()
 	g.move()
 	return nil
@@ -195,6 +195,7 @@ func (g *Game) handleInputs(fMouseX, fMouseY float64) error {
 		g.cue.p_v.y = 250
 		g.cue.a_v.x = 0
 		g.cue.a_v.y = 0
+        isCueInMotion = false
 	case inpututil.IsMouseButtonJustReleased(ebiten.MouseButtonRight):
 		isCueSelected = false
 	case inpututil.IsMouseButtonJustPressed(ebiten.MouseButtonLeft):

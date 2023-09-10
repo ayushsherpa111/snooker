@@ -11,8 +11,23 @@ type Vector struct {
 	x, y float64
 }
 
-func (v Vector) distance() float64 {
-	return math.Sqrt(v.x*v.x + v.y*v.y)
+func (v *Vector) Add(v1 Vector) {
+	v.x += v1.x
+	v.y += v1.y
+}
+
+func (v *Vector) Sub(v1 Vector) {
+	v.x -= v1.x
+	v.y -= v1.y
+}
+
+func (v *Vector) Set(v1 Vector) {
+	v.x = v1.x
+	v.y = v1.y
+}
+
+func (v *Vector) distance() int {
+	return int(math.Round(math.Sqrt(v.x*v.x + v.y*v.y)))
 }
 
 type circle struct {
